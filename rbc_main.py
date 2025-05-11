@@ -2,6 +2,14 @@ import pandas as pd
 import tkinter as tk
 from tkinter import ttk
 from tkinter import messagebox
+import sys
+import os
+
+def resource_path(relative_path):
+    """Retorna o caminho absoluto, compatível com execução direta ou empacotada."""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
 
 # Mapeamentos para categoria de risco
 risco_valor = {
@@ -46,7 +54,7 @@ class RBCApp:
         self.root = root
         self.root.title("Sistema RBC - Espécies Ameaçadas")
 
-        self.df = pd.read_csv("dados.csv")
+        self.df = pd.read_csv(resource_path("dados.csv"))
 
         self.create_widgets()
 
@@ -102,12 +110,18 @@ class RBCApp:
                 s_locais.append(s * pesos[chave])
                 p_total += pesos[chave]
 
-            # Categoria (ordinal)
-            r1 = risco_valor.get(caso_entrada['categoria'].upper(), 1.0)
-            r2 = risco_valor.get(str(row['categoria']).upper(), 1.0)
-            sim_risco = 1 - abs(r1 - r2)
-            s_locais.append(sim_risco * pesos['categoria'])
+           # Categoria (ordinal)
+            entrada_cat = caso_entrada['categoria'].upper()
+            if entrada_cat in risco_valor:
+                r1 = risco_valor[entrada_cat]
+                r2 = risco_valor.get(str(row['categoria']).upper(), 1.0)
+                sim_risco = 1 - abs(r1 - r2)
+            else:
+                sim_risco = 0.0  # Nenhum valor válido inserido
+            val = sim_risco * pesos['categoria']
+            s_locais.append(val)
             p_total += pesos['categoria']
+
 
             # Lista 2014 (binário)
             try:
